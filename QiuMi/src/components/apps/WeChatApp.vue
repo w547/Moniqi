@@ -2,6 +2,11 @@
   <div class="app-container">
     <!-- 微信顶部导航栏 -->
     <div class="top-bar">
+      <button class="top-back-btn" @click="close">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M15 6L9 12L15 18" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
       <span class="top-title">微信</span>
       <div class="top-actions">
         <button class="top-icon-btn" title="搜索" @click="showSearch = !showSearch">
@@ -340,6 +345,28 @@ function close() {
   font-size: 17px;
   font-weight: 600;
   letter-spacing: 0.5px;
+  flex: 1;
+  text-align: center;
+}
+
+.top-back-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.top-back-btn:active {
+  background: rgba(255,255,255,0.15);
 }
 
 .top-actions {

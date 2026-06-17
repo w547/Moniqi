@@ -33,6 +33,28 @@
       <SettingsApp v-if="phoneStore.activeApp === 'settings'" />
     </div>
 
+    <!-- 手机底部导航栏：返回 / Home / 多任务 -->
+    <div class="phone-nav-bar">
+      <button class="nav-btn" @click="goBack" title="返回">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M15 6L9 12L15 18" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="nav-btn nav-home" @click="goHome" title="主屏幕">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="5" width="18" height="16" rx="2" stroke="#fff" stroke-width="2" fill="none"/>
+          <path d="M3 16h18" stroke="#fff" stroke-width="2"/>
+        </svg>
+      </button>
+      <button class="nav-btn" @click="showRecentApps" title="多任务">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="3" width="9" height="8" rx="1.5" stroke="#fff" stroke-width="2" fill="none"/>
+          <rect x="13" y="3" width="9" height="8" rx="1.5" stroke="#fff" stroke-width="2" fill="none"/>
+          <rect x="7" y="13" width="10" height="8" rx="1.5" stroke="#fff" stroke-width="2" fill="none"/>
+        </svg>
+      </button>
+    </div>
+
     <div class="phone-home-bar">
       <div class="home-indicator"></div>
     </div>
@@ -65,6 +87,21 @@ import SettingsApp from '@/components/apps/SettingsApp.vue'
 
 const gameStore = useGameStore()
 const phoneStore = usePhoneStore()
+
+function goBack() {
+  if (phoneStore.activeApp) {
+    phoneStore.closeApp()
+  }
+}
+
+function goHome() {
+  phoneStore.closeApp()
+}
+
+function showRecentApps() {
+  // 回到主屏幕
+  phoneStore.closeApp()
+}
 
 const showNarrative = computed(() => {
   return gameStore.phase === 'random_event' && !phoneStore.activeApp
@@ -190,6 +227,41 @@ const showChoices = computed(() => {
     inset 0 0 80px rgba(0, 0, 0, 0.35),
     inset 0 0 30px rgba(0, 0, 0, 0.25),
     inset 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+.phone-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #000;
+  padding: 6px 0 4px;
+  border-top: 0.5px solid rgba(255,255,255,0.08);
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  width: 44px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+  padding: 0;
+}
+
+.nav-btn:active {
+  background: rgba(255,255,255,0.12);
+}
+
+.nav-home {
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
 }
 
 .phone-home-bar {
