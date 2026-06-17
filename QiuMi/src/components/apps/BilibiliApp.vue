@@ -70,10 +70,12 @@
 <script setup>
 import { computed } from 'vue'
 import { usePhoneStore } from '@/stores/phoneStore.js'
+import { usePlayerStore } from '@/stores/playerStore.js'
 import { generateBilibiliFeed } from '@/engine/PhoneSystem.js'
 
 const phoneStore = usePhoneStore()
-const feed = computed(() => generateBilibiliFeed())
+const playerStore = usePlayerStore()
+const feed = computed(() => generateBilibiliFeed(playerStore.identity))
 
 const thumbColors = [
   'linear-gradient(135deg, #2d1b69, #1a0533)',

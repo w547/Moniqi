@@ -18,15 +18,15 @@
 
         <div class="right-sidebar">
           <div class="sidebar-avatar">{{ v.author[0] }}</div>
-          <div class="sidebar-action">
-            <div class="icon-heart"></div>
-            <span class="action-count">{{ v.likes }}</span>
+          <div class="sidebar-action" @click="toggleLike(i)">
+            <div class="icon-heart" :class="{ liked: likedVideos[i] }"></div>
+            <span class="action-count" :class="{ 'liked-count': likedVideos[i] }">{{ likedVideos[i] ? incrementDouyinLike(v.likes) : v.likes }}</span>
           </div>
           <div class="sidebar-action">
             <div class="icon-comment"></div>
             <span class="action-count">{{ getCommentCount(v) }}</span>
           </div>
-          <div class="sidebar-action">
+          <div class="sidebar-action" @click="shareVideo(v)">
             <div class="icon-share"></div>
             <span class="action-count">分享</span>
           </div>
@@ -73,16 +73,25 @@
         <span class="tab-label">我</span>
       </div>
     </div>
+
+    <div v-if="showShareToast" class="share-toast" @click="showShareToast = false">
+      <div class="toast-icon">✅</div>
+      <div class="toast-text">已分享到抖音</div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { usePhoneStore } from '@/stores/phoneStore.js'
+import { usePlayerStore } from '@/stores/playerStore.js'
 import { generateDouyinFeed } from '@/engine/PhoneSystem.js'
 
 const phoneStore = usePhoneStore()
-const feed = computed(() => generateDouyinFeed())
+const playerStore = usePlayerStore()
+const feed = computed(() => generateDouyinFeed(playerStore.identity))
+const showShareToast = ref(false)
+const likedVideos = ref({})
 
 const gradients = [
   'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
@@ -102,6 +111,30 @@ function getCommentCount(v) {
 
 function getMusicName(v) {
   return '@' + v.author + '创作的原声'
+}
+
+function toggleLike(i) {
+  likedVideos.value[i] = !likedVideos.value[i]
+}
+
+function incrementDouyinLike(likesStr) {
+  if (likesStr.includes('w')) {
+    const num = parseFloat(likesStr)
+    return (num + 0.1).toFixed(1) + 'w'
+  }
+  const num = parseInt(likesStr)
+  return isNaN(num) ? likesStr : String(num + 1)
+}
+
+function shareVideo(v) {
+  showShareToast.value = true
+  phoneStore.addNotification({
+    app: 'douyin',
+    title: '抖音',
+    content: '已分享视频: ' + v.title.slice(0, 20) + '...',
+    type: 'share'
+  })
+  setTimeout(() => { showShareToast.value = false }, 2000)
 }
 
 function close() { phoneStore.closeApp() }
@@ -317,6 +350,47 @@ function close() { phoneStore.closeApp() }
   left: 2px;
   transform: rotate(45deg);
   transform-origin: 100% 100%;
+}
+
+.icon-heart.liked::before,
+.icon-heart.liked::after {
+  background: #ff2d55;
+}
+
+.liked-count {
+  color: #ff2d55 !important;
+}
+
+/* ===== 分享Toast ===== */
+.share-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 300;
+  animation: toastIn 0.3s ease;
+  font-size: 14px;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.toast-icon {
+  font-size: 28px;
+}
+
+.toast-text {
+  font-weight: 500;
 }
 
 .icon-comment {

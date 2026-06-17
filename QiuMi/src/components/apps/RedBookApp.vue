@@ -26,7 +26,7 @@
 
     <div class="app-content">
       <div class="waterfall">
-        <div class="note-card" v-for="(n, i) in feed" :key="i">
+        <div class="note-card" v-for="(n, i) in feed" :key="i" @click="shareNote(n)">
           <div class="note-image" :style="{ paddingBottom: imageRatios[i] }">
             <div class="image-inner" :style="{ background: imageGradients[i] }">
               <div class="image-shine"></div>
@@ -38,9 +38,9 @@
               <div class="author-avatar">{{ n.author[0] }}</div>
               <span class="author-name">{{ n.author }}</span>
             </div>
-            <div class="like-info">
-              <div class="heart-icon"></div>
-              <span class="like-count">{{ n.likes }}</span>
+            <div class="like-info" @click.stop="toggleLike(i)">
+              <div class="heart-icon" :class="{ liked: likedNotes[i] }"></div>
+              <span class="like-count" :class="{ 'liked-count': likedNotes[i] }">{{ likedNotes[i] ? incrementLike(n.likes) : n.likes }}</span>
             </div>
           </div>
         </div>
@@ -68,16 +68,25 @@
         <span>我</span>
       </div>
     </div>
+
+    <div v-if="showShareToast" class="share-toast" @click="showShareToast = false">
+      <div class="toast-icon">✅</div>
+      <div class="toast-text">已分享到小红书</div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { usePhoneStore } from '@/stores/phoneStore.js'
+import { usePlayerStore } from '@/stores/playerStore.js'
 import { generateRedbookFeed } from '@/engine/PhoneSystem.js'
 
 const phoneStore = usePhoneStore()
-const feed = computed(() => generateRedbookFeed())
+const playerStore = usePlayerStore()
+const feed = computed(() => generateRedbookFeed(playerStore.identity))
+const showShareToast = ref(false)
+const likedNotes = ref({})
 
 const imageRatios = ['133%', '100%', '120%', '140%', '100%', '125%', '110%', '100%', '135%', '100%']
 const imageGradients = [
@@ -92,6 +101,30 @@ const imageGradients = [
   'linear-gradient(135deg, #e8eaf6 0%, #c5cae9 40%, #9fa8da 100%)',
   'linear-gradient(135deg, #efebe9 0%, #d7ccc8 40%, #bcaaa4 100%)'
 ]
+
+function toggleLike(i) {
+  likedNotes.value[i] = !likedNotes.value[i]
+}
+
+function incrementLike(likesStr) {
+  if (likesStr.includes('w')) {
+    const num = parseFloat(likesStr)
+    return (num + 0.1).toFixed(1) + 'w'
+  }
+  const num = parseInt(likesStr)
+  return isNaN(num) ? likesStr : String(num + 1)
+}
+
+function shareNote(note) {
+  showShareToast.value = true
+  phoneStore.addNotification({
+    app: 'redbook',
+    title: '小红书',
+    content: '已分享笔记: ' + note.title.slice(0, 20) + '...',
+    type: 'share'
+  })
+  setTimeout(() => { showShareToast.value = false }, 2000)
+}
 
 function close() { phoneStore.closeApp() }
 </script>
@@ -394,6 +427,48 @@ function close() { phoneStore.closeApp() }
 .like-count {
   font-size: 10px;
   color: #bbb;
+}
+
+.liked-count {
+  color: #ff2442;
+  font-weight: 600;
+}
+
+.heart-icon.liked::before,
+.heart-icon.liked::after {
+  background: #ff2442;
+}
+
+/* ===== 分享Toast ===== */
+.share-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 300;
+  animation: toastIn 0.3s ease;
+  font-size: 14px;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.toast-icon {
+  font-size: 28px;
+}
+
+.toast-text {
+  font-weight: 500;
 }
 
 .bottom-bar {

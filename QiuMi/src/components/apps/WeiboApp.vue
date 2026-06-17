@@ -48,7 +48,7 @@
             </div>
           </div>
           <div class="post-actions">
-            <div class="action-item">
+            <div class="action-item" @click="sharePost(post)">
               <div class="action-icon repost-icon"></div>
               <span>{{ formatNum(Math.floor(post.likes / 3)) }}</span>
             </div>
@@ -56,13 +56,18 @@
               <div class="action-icon comment-icon"></div>
               <span>{{ formatNum(post.comments) }}</span>
             </div>
-            <div class="action-item">
-              <div class="action-icon like-icon"></div>
-              <span>{{ formatNum(post.likes) }}</span>
+            <div class="action-item" @click="toggleLike(i)">
+              <div class="action-icon like-icon" :class="{ liked: likedPosts[i] }"></div>
+              <span :class="{ 'liked-text': likedPosts[i] }">{{ formatNum(likedPosts[i] ? post.likes + 1 : post.likes) }}</span>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <div v-if="showShareToast" class="share-toast" @click="showShareToast = false">
+      <div class="toast-icon">✅</div>
+      <div class="toast-text">已转发到微博</div>
     </div>
 
     <div class="bottom-tab-bar">
@@ -87,16 +92,37 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { usePhoneStore } from '@/stores/phoneStore.js'
+import { usePlayerStore } from '@/stores/playerStore.js'
 import { generateWeiboFeed } from '@/engine/PhoneSystem.js'
 
 const phoneStore = usePhoneStore()
-const feed = computed(() => generateWeiboFeed())
+const playerStore = usePlayerStore()
+const feed = computed(() => generateWeiboFeed(playerStore.identity))
+const showShareToast = ref(false)
+const sharePostTitle = ref('')
+const likedPosts = ref({})
 
 function formatNum(n) {
   if (n >= 10000) return (n / 10000).toFixed(1) + 'w'
   return String(n)
+}
+
+function toggleLike(i) {
+  likedPosts.value[i] = !likedPosts.value[i]
+}
+
+function sharePost(post) {
+  sharePostTitle.value = post.content
+  showShareToast.value = true
+  phoneStore.addNotification({
+    app: 'weibo',
+    title: '微博',
+    content: '已转发微博',
+    type: 'share'
+  })
+  setTimeout(() => { showShareToast.value = false }, 2000)
 }
 
 function close() {
@@ -491,6 +517,49 @@ function close() {
   right: 0;
   transform: rotate(45deg);
   transform-origin: bottom left;
+}
+
+.like-icon.liked::before,
+.like-icon.liked::after {
+  border-color: #ff3300;
+  background: #ff3300;
+}
+
+.liked-text {
+  color: #ff3300 !important;
+  font-weight: 600;
+}
+
+/* ===== 分享Toast ===== */
+.share-toast {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  padding: 14px 24px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 300;
+  animation: toastIn 0.3s ease;
+  font-size: 14px;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.toast-icon {
+  font-size: 28px;
+}
+
+.toast-text {
+  font-weight: 500;
 }
 
 .bottom-tab-bar {
