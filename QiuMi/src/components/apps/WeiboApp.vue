@@ -11,54 +11,99 @@
     </div>
 
     <div class="app-content">
-      <div class="hot-search-section">
-        <div class="section-header">
-          <span class="section-title">热搜榜</span>
-          <span class="hot-badge">热</span>
+      <!-- 热搜榜 -->
+      <div v-if="activeTab === 'home'" class="tab-content">
+        <div class="hot-search-section">
+          <div class="section-header">
+            <span class="section-title">热搜榜</span>
+            <span class="hot-badge">热</span>
+          </div>
+          <div class="hot-list">
+            <div class="hot-item" v-for="(tag, i) in feed.hotSearch" :key="i">
+              <span class="hot-rank" :class="{ 'top3': i < 3 }">{{ i + 1 }}</span>
+              <span class="hot-tag">{{ tag }}</span>
+              <span class="hot-count">{{ Math.floor(Math.random() * 80 + 20) }}万</span>
+            </div>
+          </div>
         </div>
-        <div class="hot-list">
-          <div class="hot-item" v-for="(tag, i) in feed.hotSearch" :key="i">
-            <span class="hot-rank" :class="{ 'top3': i < 3 }">{{ i + 1 }}</span>
-            <span class="hot-tag">{{ tag.replace(/_/g, ' ') }}</span>
-            <span class="hot-heat" v-if="i < 3">
-              <span class="heat-bar" :style="{ width: (100 - i * 20) + '%' }"></span>
-            </span>
-            <span class="hot-count" v-else>{{ Math.floor(Math.random() * 50 + 10) }}万</span>
+
+        <div class="posts-section">
+          <div class="post-card" v-for="(post, i) in feed.posts" :key="i">
+            <div class="post-header">
+              <div class="avatar">{{ post.user[0] }}</div>
+              <div class="user-info">
+                <div class="username-row">
+                  <span class="username">{{ post.user }}</span>
+                  <span class="verified-badge">V</span>
+                </div>
+                <span class="post-time">{{ i === 0 ? '5分钟前' : i === 1 ? '18分钟前' : '32分钟前' }}</span>
+              </div>
+              <button class="follow-btn" :class="{ followed: i === 0 }">{{ i === 0 ? '已关注' : '+ 关注' }}</button>
+            </div>
+            <div class="post-body">
+              <div class="post-text">{{ post.content }}</div>
+              <div class="post-image" v-if="i === 0">
+                <div class="image-placeholder"></div>
+              </div>
+            </div>
+            <div class="post-actions">
+              <div class="action-item" @click="sharePost(post)">
+                <div class="action-icon repost-icon"></div>
+                <span>{{ formatNum(Math.floor(post.likes / 3)) }}</span>
+              </div>
+              <div class="action-item">
+                <div class="action-icon comment-icon"></div>
+                <span>{{ formatNum(post.comments) }}</span>
+              </div>
+              <div class="action-item" @click="toggleLike(i)">
+                <div class="action-icon like-icon" :class="{ liked: likedPosts[i] }"></div>
+                <span :class="{ 'liked-text': likedPosts[i] }">{{ formatNum(likedPosts[i] ? post.likes + 1 : post.likes) }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="posts-section">
-        <div class="post-card" v-for="(post, i) in feed.posts" :key="i">
-          <div class="post-header">
-            <div class="avatar">{{ post.user[0] }}</div>
-            <div class="user-info">
-              <div class="username-row">
-                <span class="username">{{ post.user }}</span>
-                <span class="verified-badge">V</span>
-              </div>
-              <span class="post-time">{{ i === 0 ? '5分钟前' : i === 1 ? '18分钟前' : '32分钟前' }}</span>
+      <!-- 发现页 -->
+      <div v-if="activeTab === 'discover'" class="tab-content">
+        <div class="discover-section">
+          <div class="discover-card" v-for="(tag, i) in feed.hotSearch.slice(0, 6)" :key="'d'+i" @click="sharePost({ content: tag })">
+            <div class="discover-rank">{{ i + 1 }}</div>
+            <div class="discover-body">
+              <div class="discover-title">{{ tag }}</div>
+              <div class="discover-heat">{{ Math.floor(Math.random() * 200 + 50) }}万热度</div>
             </div>
-            <button class="follow-btn" :class="{ followed: i === 0 }">{{ i === 0 ? '已关注' : '+ 关注' }}</button>
+            <div class="discover-arrow">›</div>
           </div>
-          <div class="post-body">
-            <div class="post-text">{{ post.content }}</div>
-            <div class="post-image" v-if="i === 0">
-              <div class="image-placeholder"></div>
+        </div>
+      </div>
+
+      <!-- 消息页 -->
+      <div v-if="activeTab === 'messages'" class="tab-content">
+        <div class="messages-section">
+          <div class="msg-section-header">@我的</div>
+          <div class="msg-card" v-for="(post, i) in feed.posts" :key="'m'+i">
+            <div class="msg-avatar-sm">{{ post.user[0] }}</div>
+            <div class="msg-info">
+              <div class="msg-user">{{ post.user }}</div>
+              <div class="msg-text">{{ post.content }}</div>
             </div>
+            <div class="msg-time-sm">{{ i === 0 ? '刚刚' : i === 1 ? '1小时前' : '3小时前' }}</div>
           </div>
-          <div class="post-actions">
-            <div class="action-item" @click="sharePost(post)">
-              <div class="action-icon repost-icon"></div>
-              <span>{{ formatNum(Math.floor(post.likes / 3)) }}</span>
-            </div>
-            <div class="action-item">
-              <div class="action-icon comment-icon"></div>
-              <span>{{ formatNum(post.comments) }}</span>
-            </div>
-            <div class="action-item" @click="toggleLike(i)">
-              <div class="action-icon like-icon" :class="{ liked: likedPosts[i] }"></div>
-              <span :class="{ 'liked-text': likedPosts[i] }">{{ formatNum(likedPosts[i] ? post.likes + 1 : post.likes) }}</span>
+        </div>
+      </div>
+
+      <!-- 我的页 -->
+      <div v-if="activeTab === 'profile'" class="tab-content">
+        <div class="profile-section">
+          <div class="profile-header">
+            <div class="profile-avatar">{{ playerStore.name.charAt(0) }}</div>
+            <div class="profile-name">{{ playerStore.name }}</div>
+            <div class="profile-bio">微博用户</div>
+            <div class="profile-stats">
+              <div class="stat"><span class="stat-num">{{ feed.posts.length }}</span><span class="stat-label">微博</span></div>
+              <div class="stat"><span class="stat-num">{{ Math.floor(Math.random() * 500 + 100) }}</span><span class="stat-label">关注</span></div>
+              <div class="stat"><span class="stat-num">{{ Math.floor(Math.random() * 2000 + 500) }}</span><span class="stat-label">粉丝</span></div>
             </div>
           </div>
         </div>
@@ -71,19 +116,19 @@
     </div>
 
     <div class="bottom-tab-bar">
-      <div class="tab-item active">
+      <div class="tab-item" :class="{ active: activeTab === 'home' }" @click="activeTab = 'home'">
         <div class="tab-icon home-icon"></div>
         <span class="tab-label">首页</span>
       </div>
-      <div class="tab-item">
+      <div class="tab-item" :class="{ active: activeTab === 'discover' }" @click="activeTab = 'discover'">
         <div class="tab-icon discover-icon"></div>
         <span class="tab-label">发现</span>
       </div>
-      <div class="tab-item">
+      <div class="tab-item" :class="{ active: activeTab === 'messages' }" @click="activeTab = 'messages'">
         <div class="tab-icon message-icon"></div>
         <span class="tab-label">消息</span>
       </div>
-      <div class="tab-item">
+      <div class="tab-item" :class="{ active: activeTab === 'profile' }" @click="activeTab = 'profile'">
         <div class="tab-icon profile-icon"></div>
         <span class="tab-label">我</span>
       </div>
@@ -103,6 +148,7 @@ const feed = computed(() => generateWeiboFeed(playerStore.identity))
 const showShareToast = ref(false)
 const sharePostTitle = ref('')
 const likedPosts = ref({})
+const activeTab = ref('home')
 
 function formatNum(n) {
   if (n >= 10000) return (n / 10000).toFixed(1) + 'w'
@@ -528,6 +574,121 @@ function close() {
 .liked-text {
   color: #ff3300 !important;
   font-weight: 600;
+}
+
+/* ===== 发现页 ===== */
+.discover-section {
+  padding: 12px 0;
+}
+
+.discover-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; background: #fff;
+  border-bottom: 1px solid #f0f0f0; cursor: pointer;
+  transition: background 0.15s;
+}
+.discover-card:active { background: #f5f5f5; }
+
+.discover-rank {
+  font-size: 18px; font-weight: 800; color: #ff8200;
+  min-width: 24px; text-align: center; font-style: italic;
+}
+
+.discover-body { flex: 1; min-width: 0; }
+
+.discover-title {
+  font-size: 14px; color: #333; margin-bottom: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.discover-heat {
+  font-size: 11px; color: #bbb;
+}
+
+.discover-arrow {
+  font-size: 18px; color: #ccc; flex-shrink: 0;
+}
+
+/* ===== 消息页 ===== */
+.messages-section {
+  background: #fff; padding: 0 0 20px;
+}
+
+.msg-section-header {
+  padding: 12px 16px; font-size: 14px; font-weight: 600;
+  color: #666; border-bottom: 1px solid #f0f0f0;
+}
+
+.msg-card {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+}
+.msg-card:active { background: #f5f5f5; }
+
+.msg-avatar-sm {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, #ff8200, #ffb347);
+  color: #fff; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.msg-info { flex: 1; min-width: 0; }
+
+.msg-user {
+  font-size: 14px; font-weight: 500; color: #333; margin-bottom: 2px;
+}
+
+.msg-text {
+  font-size: 12px; color: #999;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.msg-time-sm {
+  font-size: 11px; color: #bbb; flex-shrink: 0;
+}
+
+/* ===== 个人页 ===== */
+.profile-section {
+  padding: 20px 0;
+}
+
+.profile-header {
+  background: #fff; padding: 24px 16px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.profile-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: linear-gradient(135deg, #ff8200, #ffb347);
+  color: #fff; font-size: 28px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 12px;
+}
+
+.profile-name {
+  font-size: 18px; font-weight: 600; color: #222; margin-bottom: 4px;
+}
+
+.profile-bio {
+  font-size: 13px; color: #999; margin-bottom: 16px;
+}
+
+.profile-stats {
+  display: flex; gap: 32px;
+}
+
+.stat {
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.stat-num {
+  font-size: 16px; font-weight: 700; color: #222;
+}
+
+.stat-label {
+  font-size: 11px; color: #999; margin-top: 2px;
 }
 
 /* ===== 分享Toast ===== */

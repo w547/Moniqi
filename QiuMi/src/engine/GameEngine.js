@@ -8,7 +8,7 @@ import { RelationshipSystem } from './RelationshipSystem.js'
 import {
   generateWeiboFeed, generateWechatMessages, generateSMS,
   generateDouyinFeed, generateRedbookFeed, generateTFamilyFeed,
-  generateBilibiliFeed
+  generateBilibiliFeed, generateSasaengSMS
 } from './PhoneSystem.js'
 import { randomPick, chance } from './RandomEngine.js'
 
@@ -95,7 +95,20 @@ export class GameEngine {
       phone.addMessage({
         from: sms.sender,
         preview: sms.content.substring(0, 20) + '...',
+        content: sms.content,
         unread: true
+      })
+    }
+
+    // 私生威胁短信（遇到男友后概率出现）
+    if (chance(10)) {
+      const sasaeng = generateSasaengSMS()
+      phone.addMessage({
+        from: sasaeng.sender,
+        preview: sasaeng.content.substring(0, 25) + '...',
+        content: sasaeng.content,
+        unread: true,
+        isSasaeng: true
       })
     }
 

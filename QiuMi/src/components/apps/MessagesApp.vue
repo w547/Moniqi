@@ -1,72 +1,132 @@
 <template>
   <div class="app-container">
-    <div class="status-bar">
-      <span class="status-time">9:41</span>
-      <span class="status-icons">
-        <span class="signal-icon"></span>
-        <span class="wifi-icon"></span>
-        <span class="battery-icon"></span>
-      </span>
-    </div>
-
-    <div class="app-header">
-      <div class="header-left" @click="close">
-        <span class="back-arrow"></span>
-      </div>
-      <div class="header-center">
-        <span class="header-title">信息</span>
-      </div>
-      <div class="header-right">
-        <span class="compose-icon"></span>
-      </div>
-    </div>
-
-    <div class="search-bar">
-      <span class="search-icon"></span>
-      <span class="search-text">搜索</span>
-    </div>
-
-    <div class="app-content">
-      <div class="msg-item" v-for="(m, i) in messages" :key="i">
-        <div class="msg-avatar" :class="'avatar-' + ((i % 5) + 1)">
-          <span class="avatar-text">{{ m.from.charAt(0) }}</span>
+    <!-- 短信列表 -->
+    <div v-if="!selectedMsg" class="list-view">
+      <div class="app-header">
+        <div class="header-left" @click="close">
+          <span class="back-arrow"></span>
         </div>
-        <div class="msg-body">
-          <div class="msg-top">
-            <span class="msg-sender">{{ m.from }}</span>
-            <span class="msg-time">{{ m.time }}</span>
+        <div class="header-center">
+          <span class="header-title">信息</span>
+        </div>
+        <div class="header-right">
+          <span class="compose-icon"></span>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <span class="search-icon"></span>
+        <span class="search-text">搜索</span>
+      </div>
+
+      <div class="app-content">
+        <div
+          class="msg-item"
+          :class="{ 'msg-sasaeng': m.isSasaeng }"
+          v-for="(m, i) in messages"
+          :key="i"
+          @click="openMessage(m, i)"
+        >
+          <div class="msg-avatar" :class="[m.isSasaeng ? 'avatar-sasaeng' : 'avatar-' + ((i % 5) + 1)]">
+            <span class="avatar-text">{{ m.from.charAt(0) }}</span>
           </div>
-          <div class="msg-preview">{{ m.preview }}</div>
+          <div class="msg-body">
+            <div class="msg-top">
+              <span class="msg-sender" :class="{ 'sasaeng-sender': m.isSasaeng }">{{ m.from }}</span>
+              <span class="msg-time">{{ m.time || '刚刚' }}</span>
+            </div>
+            <div class="msg-preview" :class="{ 'sasaeng-preview': m.isSasaeng }">{{ m.preview }}</div>
+          </div>
+          <div v-if="m.unread" class="unread-dot"></div>
+          <div class="msg-chevron"></div>
         </div>
-        <div class="msg-chevron"></div>
-      </div>
 
-      <div v-if="messages.length === 0" class="empty">
-        <span class="empty-icon"></span>
-        <span class="empty-text">暂无信息</span>
+        <div v-if="messages.length === 0" class="empty">
+          <span class="empty-icon"></span>
+          <span class="empty-text">暂无信息</span>
+        </div>
       </div>
     </div>
 
-    <div class="bottom-bar">
-      <div class="bb-tab active">
-        <span class="bb-icon bb-star"></span>
+    <!-- 短信详情 -->
+    <div v-else class="detail-view">
+      <div class="detail-header">
+        <button class="detail-back" @click="goBack">←</button>
+        <span class="detail-title">{{ selectedMsg.from }}</span>
+        <div class="detail-spacer"></div>
       </div>
-      <div class="bb-tab">
-        <span class="bb-icon bb-recent"></span>
+
+      <div class="detail-content">
+        <div v-if="selectedMsg.isSasaeng" class="sasaeng-warning">
+          <span class="warning-icon">⚠️</span>
+          <span>此号码未在通讯录中</span>
+        </div>
+
+        <div class="detail-bubble-wrap">
+          <div class="detail-bubble" :class="{ 'sasaeng-bubble': selectedMsg.isSasaeng }">
+            {{ selectedMsg.content }}
+          </div>
+          <div class="detail-time">{{ selectedMsg.time || '刚刚' }}</div>
+        </div>
       </div>
-      <div class="bb-tab">
-        <span class="bb-icon bb-contacts"></span>
+
+      <div class="detail-actions">
+        <button class="action-btn" @click="replyMessage">回复</button>
+        <button class="action-btn danger" @click="deleteMessage">删除</button>
+        <button class="action-btn" @click="blockMessage">阻止此号码</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { usePhoneStore } from '@/stores/phoneStore.js'
 
 const phoneStore = usePhoneStore()
 const messages = computed(() => phoneStore.messages)
+const selectedMsg = ref(null)
+const selectedIndex = ref(-1)
+
+function openMessage(m, i) {
+  selectedMsg.value = { ...m }
+  selectedIndex.value = i
+}
+
+function goBack() {
+  selectedMsg.value = null
+  selectedIndex.value = -1
+}
+
+function replyMessage() {
+  phoneStore.addNotification({
+    app: 'messages',
+    title: '信息',
+    content: '已发送回复',
+    type: 'reply'
+  })
+  goBack()
+}
+
+function deleteMessage() {
+  if (selectedIndex.value >= 0) {
+    phoneStore.messages.splice(selectedIndex.value, 1)
+  }
+  goBack()
+}
+
+function blockMessage() {
+  phoneStore.addNotification({
+    app: 'messages',
+    title: '信息',
+    content: '已阻止此号码',
+    type: 'block'
+  })
+  if (selectedIndex.value >= 0) {
+    phoneStore.messages.splice(selectedIndex.value, 1)
+  }
+  goBack()
+}
 
 function close() { phoneStore.closeApp() }
 </script>
@@ -78,37 +138,9 @@ function close() { phoneStore.closeApp() }
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
-.status-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 20px 4px; background: #f9f9f9; color: #1a1a1a;
-  font-size: 11px; font-weight: 600;
-}
-.status-icons { display: flex; align-items: center; gap: 5px; }
-.signal-icon {
-  display: block; width: 14px; height: 10px;
-  background: repeating-linear-gradient(to right, #1a1a1a 0px, #1a1a1a 2px, transparent 2px, transparent 3px);
-  background-size: 14px 100%;
-}
-.wifi-icon {
-  width: 12px; height: 10px;
-  border: 1.5px solid #1a1a1a; border-radius: 50%;
-  position: relative;
-}
-.wifi-icon::after {
-  content: ''; position: absolute; top: -4px; left: 50%; transform: translateX(-50%);
-  width: 4px; height: 4px; background: #1a1a1a; border-radius: 50%;
-}
-.battery-icon {
-  width: 20px; height: 10px; border: 1.5px solid #1a1a1a; border-radius: 2px;
-  position: relative; margin-left: 2px;
-}
-.battery-icon::before {
-  content: ''; position: absolute; right: -3px; top: 50%; transform: translateY(-50%);
-  width: 2px; height: 4px; background: #1a1a1a; border-radius: 0 1px 1px 0;
-}
-.battery-icon::after {
-  content: ''; position: absolute; left: 1px; top: 1px; bottom: 1px;
-  width: 12px; background: #1a1a1a; border-radius: 1px;
+/* ===== 列表视图 ===== */
+.list-view {
+  display: flex; flex-direction: column; height: 100%;
 }
 
 .app-header {
@@ -163,6 +195,7 @@ function close() { phoneStore.closeApp() }
   transition: background 0.15s;
 }
 .msg-item:active { background: #f5f5f5; }
+.msg-item.msg-sasaeng { background: #fff5f5; }
 
 .msg-avatar {
   width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
@@ -173,6 +206,7 @@ function close() { phoneStore.closeApp() }
 .avatar-3 { background: #ff3b30; }
 .avatar-4 { background: #34c759; }
 .avatar-5 { background: #007aff; }
+.avatar-sasaeng { background: #ff3b30; }
 
 .avatar-text {
   font-size: 18px; font-weight: 600; color: #fff;
@@ -181,10 +215,17 @@ function close() { phoneStore.closeApp() }
 .msg-body { flex: 1; min-width: 0; }
 .msg-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
 .msg-sender { font-size: 15px; font-weight: 500; color: #1a1a1a; }
+.sasaeng-sender { color: #ff3b30; font-weight: 600; }
 .msg-time { font-size: 12px; color: #8e8e93; flex-shrink: 0; margin-left: 8px; }
 .msg-preview {
   font-size: 13px; color: #8e8e93;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.sasaeng-preview { color: #ff3b30; }
+
+.unread-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #007aff; flex-shrink: 0;
 }
 
 .msg-chevron {
@@ -207,47 +248,88 @@ function close() { phoneStore.closeApp() }
 }
 .empty-text { font-size: 15px; color: #8e8e93; }
 
-.bottom-bar {
-  display: flex; background: #f9f9f9; border-top: 0.5px solid #e0e0e0;
-  padding: 6px 0; padding-bottom: env(safe-area-inset-bottom, 6px);
-}
-.bb-tab { flex: 1; display: flex; align-items: center; justify-content: center; padding: 6px 0; }
-.bb-icon { display: block; width: 22px; height: 22px; position: relative; }
-
-.bb-star {
-  border: 2px solid #34c759; border-radius: 3px;
-  position: relative;
-}
-.bb-star::after {
-  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 8px; height: 8px; background: #34c759; border-radius: 1px;
+/* ===== 详情视图 ===== */
+.detail-view {
+  display: flex; flex-direction: column; height: 100%;
 }
 
-.bb-recent {
-  border: 2px solid #8e8e93; border-radius: 50%;
-  position: relative;
-}
-.bb-recent::before {
-  content: ''; position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
-  width: 6px; height: 6px; border: 1.5px solid #8e8e93; border-radius: 50%;
-}
-.bb-recent::after {
-  content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 10px; height: 6px; border: 1.5px solid #8e8e93; border-radius: 0 0 8px 8px;
-  border-top: none;
+.detail-header {
+  display: flex; align-items: center;
+  padding: 8px 14px 10px;
+  background: #f9f9f9;
+  border-bottom: 0.5px solid #e0e0e0;
 }
 
-.bb-contacts {
-  border: 2px solid #8e8e93; border-radius: 50%;
-  position: relative;
+.detail-back {
+  background: none; border: none;
+  font-size: 18px; color: #34c759;
+  cursor: pointer; padding: 4px 8px;
 }
-.bb-contacts::before {
-  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 6px; height: 6px; background: #8e8e93; border-radius: 50%;
+
+.detail-title {
+  flex: 1; text-align: center;
+  font-size: 17px; font-weight: 700; color: #1a1a1a;
 }
-.bb-contacts::after {
-  content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
-  width: 12px; height: 6px; border: 1.5px solid #8e8e93; border-radius: 0 0 8px 8px;
-  border-top: none;
+
+.detail-spacer { width: 32px; }
+
+.detail-content {
+  flex: 1; overflow-y: auto;
+  padding: 20px 16px;
+  background: #f5f5f5;
 }
+
+.sasaeng-warning {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; margin-bottom: 16px;
+  background: #fff3f3; border-radius: 10px;
+  font-size: 13px; color: #ff3b30;
+  border: 1px solid #ffcdd2;
+}
+
+.warning-icon { font-size: 16px; }
+
+.detail-bubble-wrap {
+  display: flex; flex-direction: column;
+  align-items: flex-start;
+}
+
+.detail-bubble {
+  padding: 12px 16px; border-radius: 16px 16px 16px 4px;
+  background: #fff; color: #1a1a1a;
+  font-size: 15px; line-height: 1.5; max-width: 85%;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.sasaeng-bubble {
+  background: #fff5f5;
+  border: 1px solid #ffcdd2;
+  color: #d32f2f;
+}
+
+.detail-time {
+  font-size: 12px; color: #8e8e93;
+  margin-top: 6px; margin-left: 4px;
+}
+
+.detail-actions {
+  display: flex; gap: 8px;
+  padding: 12px 16px;
+  padding-bottom: 28px;
+  background: #fff;
+  border-top: 0.5px solid #e0e0e0;
+}
+
+.action-btn {
+  flex: 1; padding: 10px 0;
+  border: 1px solid #d0d0d0; border-radius: 8px;
+  background: #fff; font-size: 13px; font-weight: 500;
+  color: #1a1a1a; cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+}
+.action-btn:active { background: #f0f0f0; }
+.action-btn.danger { color: #ff3b30; border-color: #ffcdd2; }
+.action-btn.danger:active { background: #fff5f5; }
 </style>

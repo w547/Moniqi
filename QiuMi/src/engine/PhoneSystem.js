@@ -3,18 +3,41 @@ import { randomPick, chance } from './RandomEngine.js'
 // ===== 通用内容（不受身份影响）=====
 
 const weiboHotSearch = [
-  '#时代少年团_新歌_', '#TOP登陆少年_舞台_', '#TFBOYS_合体_',
-  '#某顶流_疑似恋爱_', '#私生饭_跟踪_', '#内娱_塌房预警_',
-  '#养成系_恋爱禁止_', '#打歌节目_一位_', '#颁奖典礼_红毯_',
-  '#粉丝接机_拥堵_', '#偶像_机场时尚_', '#新剧_路透_',
-  '#综艺_录制_路透_', '#演唱会_抢票_', '#站姐_神图_'
+  '#时代少年团新歌MV预告发布',
+  '#TOP登陆少年舞台直拍',
+  '#TFBOYS合体演唱会官宣',
+  '#某顶流疑似深夜约会',
+  '#私生饭跟踪艺人被警方带走',
+  '#内娱塌房预警又来了',
+  '#养成系恋爱禁止条款引争议',
+  '#打歌节目一位得主揭晓',
+  '#颁奖典礼红毯造型盘点',
+  '#粉丝接机造成机场拥堵',
+  '#偶像机场时尚穿搭合集',
+  '#新剧路透造型曝光',
+  '#综艺录制现场路透',
+  '#演唱会抢票服务器崩溃',
+  '#站姐神图刷屏出圈'
 ]
 
 const smsTemplates = [
   { sender: '1069xxxx', content: '【温馨提示】您的快递已到达小区快递柜，取件码：xxxx' },
-  { sender: '未知号码', content: '我知道你的秘密。你以为藏得很好吗？' },
   { sender: '银行', content: '您的账户于xx月xx日发生一笔消费，金额：xxx元' },
   { sender: '运营商', content: '尊敬的用户，您的套餐流量已不足1GB' }
+]
+
+// 私生威胁短信（独立于身份，随机出现）
+const sasaengSMS = [
+  { sender: '未知号码', content: '我知道你是谁。你和他在一起对吧？我都看到了。' },
+  { sender: '未知号码', content: '离他远一点，你配不上他。' },
+  { sender: '未知号码', content: '你昨天穿的那件衣服很好看。是的，我看着你。' },
+  { sender: '未知号码', content: '你们在XX餐厅的约会我都拍下来了。你说如果曝光出去会怎样？' },
+  { sender: '未知号码', content: '你以为没人知道？我一直在盯着你。' },
+  { sender: '未知号码', content: '你是他的第几个了？你以为自己是特别的吗？' },
+  { sender: '未知号码', content: '别再靠近他了，否则后果自负。' },
+  { sender: '未知号码', content: '我知道你的地址，也知道你在哪里上班。小心点。' },
+  { sender: '未知号码', content: '你觉得自己藏得很好？天真。' },
+  { sender: '未知号码', content: '昨晚你们在一起吧？我都看到了。真恶心。' }
 ]
 
 // ===== 各身份对应的微信联系人 =====
@@ -261,7 +284,7 @@ export function getIdentityData(identity) {
 export function generateWeiboFeed(identity) {
   const data = getIdentityData(identity)
   return {
-    hotSearch: randomPick(weiboHotSearch),
+    hotSearch: weiboHotSearch.slice(0, 10),  // 返回完整热搜数组，每条是完整标题
     posts: [...data.weiboPosts].sort(() => Math.random() - 0.5).slice(0, 3)
   }
 }
@@ -282,6 +305,10 @@ export function generateWechatMessages(boyfriendName, identity) {
 
 export function generateSMS() {
   return randomPick(smsTemplates)
+}
+
+export function generateSasaengSMS() {
+  return randomPick(sasaengSMS)
 }
 
 export function generateDouyinFeed(identity) {
