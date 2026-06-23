@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">嫂子模拟器</string>
+    <string name="title_activity_main">嫂子模拟器</string>
+    <string name="package_name">com.saosao.simulator</string>
+    <string name="custom_url_scheme">com.saosao.simulator</string>
+</resources>
